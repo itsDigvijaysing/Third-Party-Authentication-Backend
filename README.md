@@ -1,188 +1,220 @@
-# THIRD PARTY FACE AUTHENTICATION
+# Third-Party Authentication System
 
-Dillinger is a cloud-enabled, mobile-ready, offline-storage compatible,
-AngularJS-powered HTML5 Markdown editor.
+A multi-module project providing:
 
-- Type some Markdown on the left
-- See HTML in the right
-- ✨Magic ✨
+1. **Central Auth Service**: Flask backend + React dashboard for user & organization management.  
+2. **Third-Party Face-Auth API**: Two-step token + face-recognition login for external apps.  
+3. **Organization Samples**: “face-auth-organizations” contains example Angular (TikTok) and React (Zomato) clients.  
+4. **Legacy Static**: A static HTML/JS version of the auth flows.
 
-## Features
+---
 
-- Import a HTML file and watch it magically convert to Markdown
-- Drag and drop images (requires your Dropbox account be linked)
-- Import and save files from GitHub, Dropbox, Google Drive and One Drive
-- Drag and drop markdown and HTML files into Dillinger
-- Export documents as Markdown, HTML and PDF
+## Table of Contents
 
-Markdown is a lightweight markup language based on the formatting conventions
-that people naturally use in email.
-As [John Gruber] writes on the [Markdown site][df1]
+1. [Core Features](#core-features)  
+2. [Technology Stack](#technology-stack)  
+3. [Folder Structure](#folder-structure)  
+4. [Prerequisites](#prerequisites)  
+5. [Setup & Installation](#setup--installation)  
+6. [Running the Application](#running-the-application)  
+7. [API Endpoints](#api-endpoints)  
+8. [Example Organization Clients](#example-organization-clients)  
+9. [Current Status & Known Issues](#current-status--known-issues)  
+10. [Future Improvements](#future-improvements)  
 
-> The overriding design goal for Markdown's
-> formatting syntax is to make it as readable
-> as possible. The idea is that a
-> Markdown-formatted document should be
-> publishable as-is, as plain text, without
-> looking like it's been marked up with tags
-> or formatting instructions.
+---
 
-This text you see here is \*actually- written in Markdown! To get a feel
-for Markdown's syntax, type some text into the left window and
-watch the results in the right.
+## Core Features
 
-## Tech
+### 1. User Management (Flask + React Dashboard)
+- **Registration**: email, password, phone + face image (face detection via `face_recognition`).  
+- **Login**: standard email/password for dashboard access.  
+- **Profile**: view/update user data and image.  
+- **History**: view personal login history.
 
-Dillinger uses a number of open source projects to work properly:
+### 2. Organization Management
+- Organizations register to obtain a `company_id` API credential.  
+- Full CRUD on organization records via React UI.
 
-- [AngularJS] - HTML enhanced for web apps!
-- [Ace Editor] - awesome web-based text editor
-- [markdown-it] - Markdown parser done right. Fast and easy to extend.
-- [Twitter Bootstrap] - great UI boilerplate for modern web apps
-- [node.js] - evented I/O for the backend
-- [Express] - fast node.js network app framework [@tjholowaychuk]
-- [Gulp] - the streaming build system
-- [Breakdance](https://breakdance.github.io/breakdance/) - HTML
-  to Markdown converter
-- [jQuery] - duh
+### 3. Third-Party Face-Auth API (Flask)
+1. **Token Request** — `POST /login-req`  
+   - Input: `email`, `company_id` → issues a 4-digit token, logs it.  
+2. **Face Verification** — `POST /login`  
+   - Input: `email`, `token`, live face image → compares to stored image → returns user record on success.
 
-And of course Dillinger itself is open source with a [public repository][dill]
-on GitHub.
+### 4. Legacy Static Frontend
+- Static HTML/JS version of registration, login, and face-auth flows (for reference / deprecation).
 
-## Installation
+---
 
-Dillinger requires [Node.js](https://nodejs.org/) v10+ to run.
+## Technology Stack
 
-Install the dependencies and devDependencies and start the server.
+- **Backend**: Flask, Flask-PyMongo, `face_recognition`, Flask-CORS, Flask-Limiter, Flask-Mail, Python 3.7+  
+- **Dashboard Frontend**: React.js, react-router-dom, axios, react-webcam, joi, Bootstrap  
+- **Sample Clients** (face-auth-organizations): Angular (TikTok), React (Zomato)  
+- **Static Legacy**: Vanilla HTML, CSS, JS  
+- **Database**: MongoDB (local or Atlas)
 
-```sh
-git clone https://github.com/monstermahi982/face-auth-project.git
-cd face-auth-project
-python3 -v venv venv
-source venv/bin/activate
+---
+
+## Folder Structure
+
+```
+Third-Party Authentication System Project/
+├── face-auth-organizations/
+│   ├── tiktok/              # Angular sample client
+│   └── zomato/              # React sample client
+├── Third-Party-Auth-Backend/ # Flask backend
+│   ├── main.py
+│   ├── requirements.txt
+│   └── static/
+│       ├── uploads/         # Registered face images
+│       └── temp\_uploads/    # Live verification images
+└── Third-Party-Authentication-Frontend/
+├── Layout/              # draw\.io diagrams
+├── third-party-auth-react/  # React dashboard
+└── Third-Party-Auth-Website/ # Static legacy frontend
+
+```
+
+---
+
+## Prerequisites
+
+- **Python 3.7+**, `pip`  
+- **Node.js** & **npm** (or yarn)  
+- **MongoDB** running locally or via Atlas  
+- System libraries for `face_recognition` (e.g. `dlib`, `cmake`)
+
+---
+
+## Setup & Installation
+
+### 1. Backend (Flask)
+
+```bash
+cd Third-Party-Auth-Backend
+python -m venv venv
+source venv/bin/activate       # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-python main.py
+````
+
+* Edit `main.py` or `.env` to set:
+
+  ```ini
+  MONGO_URI=...
+  SECRET_KEY=...
+  MAIL_USERNAME=...
+  MAIL_PASSWORD=...
+  ```
+* Ensure `static/uploads` and `static/temp_uploads` exist (permissions writable).
+
+### 2. Dashboard Frontend (React)
+
+```bash
+cd ../Third-Party-Authentication-Frontend/third-party-auth-react
+npm install
 ```
 
-For production environments...
+* Update any API base-URL in `src/` (e.g. to `http://localhost:5000`).
 
-```sh
-npm install --production
-NODE_ENV=production node app
+### 3. Sample Organization Clients
+
+#### TikTok (Angular)
+
+```bash
+cd ../../face-auth-organizations/tiktok
+npm install
 ```
 
-## Plugins
+#### Zomato (React)
 
-Dillinger is currently extended with the following plugins.
-Instructions on how to use them in your own application are linked below.
-
-| Plugin           | README                                    |
-| ---------------- | ----------------------------------------- |
-| Dropbox          | [plugins/dropbox/README.md][pldb]         |
-| GitHub           | [plugins/github/README.md][plgh]          |
-| Google Drive     | [plugins/googledrive/README.md][plgd]     |
-| OneDrive         | [plugins/onedrive/README.md][plod]        |
-| Medium           | [plugins/medium/README.md][plme]          |
-| Google Analytics | [plugins/googleanalytics/README.md][plga] |
-
-## Development
-
-Want to contribute? Great!
-
-Dillinger uses Gulp + Webpack for fast developing.
-Make a change in your file and instantaneously see your updates!
-
-Open your favorite Terminal and run these commands.
-
-First Tab:
-
-```sh
-node app
+```bash
+cd ../zomato
+npm install
 ```
 
-Second Tab:
+---
 
-```sh
-gulp watch
-```
+## Running the Application
 
-(optional) Third:
+1. **Start Flask Backend**
 
-```sh
-karma test
-```
+   ```bash
+   cd Third-Party-Auth-Backend
+   source venv/bin/activate
+   python main.py
+   # or flask run
+   ```
+2. **Start React Dashboard**
 
-#### Building for source
+   ```bash
+   cd ../Third-Party-Authentication-Frontend/third-party-auth-react
+   npm start
+   ```
+3. **Start Sample Clients**
 
-For production release:
+   ```bash
+   # TikTok
+   cd ../../../face-auth-organizations/tiktok
+   ng serve
 
-```sh
-gulp build --prod
-```
+   # Zomato
+   cd ../zomato
+   npm start
+   ```
 
-Generating pre-built zip archives for distribution:
+---
 
-```sh
-gulp build dist --prod
-```
+## API Endpoints
 
-## Docker
+* **Users**
+  `POST /user`, `GET /user`, `GET/PUT/DELETE /user/<id>`
 
-Dillinger is very easy to install and deploy in a Docker container.
+* **Auth**
+  `POST /login-user` (dashboard)
+  `POST /login-req` → issue token
+  `POST /login` → verify face + token
 
-By default, the Docker will expose port 8080, so change this within the
-Dockerfile if necessary. When ready, simply use the Dockerfile to
-build the image.
+* **Organizations**
+  `POST /company`, `GET /company`, `GET/PUT/DELETE /company/<id>`
 
-```sh
-cd dillinger
-docker build -t <youruser>/dillinger:${package.json.version} .
-```
+* **History**
+  `GET/DELETE /history/<user_id>`
 
-This will create the dillinger image and pull in the necessary dependencies.
-Be sure to swap out `${package.json.version}` with the actual
-version of Dillinger.
+* **Utility**
+  `POST /file` → face detection on upload
 
-Once done, run the Docker image and map the port to whatever you wish on
-your host. In this example, we simply map port 8000 of the host to
-port 8080 of the Docker (or whatever port was exposed in the Dockerfile):
+---
 
-```sh
-docker run -d -p 8000:8080 --restart=always --cap-add=SYS_ADMIN --name=dillinger <youruser>/dillinger:${package.json.version}
-```
+## Example Organization Clients
 
-> Note: `--capt-add=SYS-ADMIN` is required for PDF rendering.
+* **TikTok** (`face-auth-organizations/tiktok`): Angular + login service tests.
+* **Zomato** (`face-auth-organizations/zomato`): React + sample branding.
 
-Verify the deployment by navigating to your server address in
-your preferred browser.
+Each client demonstrates how a third-party app would call `/login-req` and `/login`.
 
-```sh
-127.0.0.1:8000
-```
+---
 
-## License
+## Current Status & Known Issues
 
-MIT
+* **Plain-text passwords** (must implement hashing).
+* **Missing token validation** in `/login`.
+* **Hard-coded file paths** in backend.
+* **Flask-Mail configured but unused**.
+* **Basic error handling**; needs better logging.
+* **Static legacy frontend** is deprecated.
 
-**Free Software, Hell Yeah!**
+---
 
-[//]: # "These are reference links used in the body of this note and get stripped out when the markdown processor does its job. There is no need to format nicely because it shouldn't be seen. Thanks SO - http://stackoverflow.com/questions/4823468/store-comments-in-markdown-syntax"
-[dill]: https://github.com/joemccann/dillinger
-[git-repo-url]: https://github.com/joemccann/dillinger.git
-[john gruber]: http://daringfireball.net
-[df1]: http://daringfireball.net/projects/markdown/
-[markdown-it]: https://github.com/markdown-it/markdown-it
-[ace editor]: http://ace.ajax.org
-[node.js]: http://nodejs.org
-[twitter bootstrap]: http://twitter.github.com/bootstrap/
-[jquery]: http://jquery.com
-[@tjholowaychuk]: http://twitter.com/tjholowaychuk
-[express]: http://expressjs.com
-[angularjs]: http://angularjs.org
-[gulp]: http://gulpjs.com
-[pldb]: https://github.com/joemccann/dillinger/tree/master/plugins/dropbox/README.md
-[plgh]: https://github.com/joemccann/dillinger/tree/master/plugins/github/README.md
-[plgd]: https://github.com/joemccann/dillinger/tree/master/plugins/googledrive/README.md
-[plod]: https://github.com/joemccann/dillinger/tree/master/plugins/onedrive/README.md
-[plme]: https://github.com/joemccann/dillinger/tree/master/plugins/medium/README.md
-[plga]: https://github.com/RahulHP/dillinger/blob/master/plugins/googleanalytics/README.md
+## Future Improvements
+
+* Add **bcrypt**/`passlib` hashing for passwords.
+* Enforce **token validation** in face verification.
+* Refactor file paths to be **configurable**.
+* Integrate **email delivery** for tokens.
+* Enhance **error handling** & add **logging** (e.g. Sentry).
+* Write **unit & integration tests**.
+* Publish **API docs** (Swagger/OpenAPI).
+* Improve **React dashboard UI/UX**.
+* Demonstrate **real third-party integration** with sample clients.
