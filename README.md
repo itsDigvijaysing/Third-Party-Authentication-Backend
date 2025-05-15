@@ -7,6 +7,20 @@ A multi-module project providing:
 3. **Organization Samples**: “face-auth-organizations” contains example Angular (TikTok) and React (Zomato) clients.  
 4. **Legacy Static**: A static HTML/JS version of the auth flows.
 
+**How face_recognition Works**
+1. Face Detection
+The library uses dlib's Histogram of Oriented Gradients (HOG) and Convolutional Neural Network (CNN) models to detect faces in images. These models identify the locations of faces by analyzing the image's pixel patterns.
+
+2. Facial Feature Extraction
+Once a face is detected, the library extracts 68 facial landmarks (like eyes, nose, mouth, etc.) to understand the structure of the face. This step is crucial for aligning faces and improving recognition accuracy.
+
+3. Face Encoding
+The aligned face is then passed through a pre-trained ResNet-34 model, which outputs a 128-dimensional embedding (a numerical representation) of the face. This embedding captures the unique features of the face.
+Stack Overflow
+
+4. Face Comparison
+To compare faces, the library calculates the Euclidean distance between their 128-dimensional embeddings. If the distance is below a certain threshold (default is 0.6), the faces are considered a match.
+
 ---
 
 ## Table of Contents
