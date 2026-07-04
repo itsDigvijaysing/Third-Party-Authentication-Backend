@@ -5,6 +5,7 @@ from flask_serialize import FlaskSerialize
 from flask_pymongo import PyMongo, ObjectId
 from bson.json_util import dumps
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import face_recognition
 from flask_cors import CORS
@@ -59,6 +60,20 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['TEMP_FOLDER'] = TEMP_FOLDER
 
+def hash_password(password):
+    return generate_password_hash(password)
+
+def verify_password(stored_password, provided_password):
+    if check_password_hash(stored_password, provided_password):
+        return True
+    return stored_password == provided_password
+
+def upgrade_password_hash(user_id, provided_password):
+    db.users.update_one(
+        {'_id': ObjectId(user_id)},
+        {'$set': {'password': hash_password(provided_password)}}
+    )
+
 class MongoAPI:
     def __init__(self, data):
         self.client = MongoClient("mongodb://localhost:27017/")  
@@ -99,7 +114,7 @@ def users():
                 check_face = face_recognition.load_image_file("./static/uploads/" + filename)
                 check_face_encoding = face_recognition.face_encodings(check_face)[0]
                 email = request.form['email']
-                password = request.form['password']
+                password = hash_password(request.form['password'])
                 image = "./static/uploads/" + filename
                 new_user = { 'name': request.form['name'], 'email': email, 'password' : password , 'phone': request.form['phone'], "image":image, 'createdAt': datetime.datetime.now(), 'updatedAt' : datetime.datetime.now() }
                 result = db.users.insert_one(new_user)
@@ -136,13 +151,16 @@ def one_user(id):
     
         try:
     
-            data = db.users.update_one({'_id':ObjectId(id)}, {'$set': {
-                'name':request.json['name'],
-                'email':request.json['email'],
-                'phone':request.json['phone'],
-                'password':request.json['password'],
-                'updatedAt' : datetime.datetime.now()
-            }})
+            update_fields = {
+                'name': request.json['name'],
+                'email': request.json['email'],
+                'phone': request.json['phone'],
+                'updatedAt': datetime.datetime.now()
+            }
+            if request.json.get('password'):
+                update_fields['password'] = hash_password(request.json['password'])
+
+            data = db.users.update_one({'_id':ObjectId(id)}, {'$set': update_fields})
 
             print(request.json, id)
             print(data)
@@ -163,7 +181,6 @@ def one_user(id):
                 'name':user['name'],
                 'email':user['email'],
                 'phone':user['phone'],
-                'password':user['password'],
                 'image': 'http://localhost:5000' + user['image'].split('.')[1] + '.' +user['image'].split('.')[2],
                 'createdAt': user['createdAt']
             })
@@ -344,7 +361,9 @@ def user_login_dash():
                 if user is None:
                     return jsonify({"data" : "Email Not Found"})
 
-                if(user['password'] == password):
+                if verify_password(user['password'], password):
+                    if not check_password_hash(user['password'], password):
+                        upgrade_password_hash(user['_id'], password)
                     print("user is corrent")
                     return jsonify({
                         'company_id':str(ObjectId(user['_id'])),
