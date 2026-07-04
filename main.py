@@ -384,8 +384,7 @@ def company():
                 return jsonify({'company_id':str(ObjectId(company['_id']))})        
             
             result = db.companies.insert_one({ 'name': name, 'email' : email, 'phone' : phone})
-            print(company)  
-            return jsonify({'company_id':str(ObjectId(company['_id']))})
+            return jsonify({'company_id':str(result.inserted_id)})
     
         except Exception as ex:
             print(ex)
